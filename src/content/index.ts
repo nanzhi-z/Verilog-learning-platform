@@ -2,8 +2,9 @@ import type { Stage, Chapter } from './types';
 import { basics } from './basics';
 import { sequential } from './sequential';
 import { practice } from './practice';
+import { apps } from './apps';
 
-export const stages: Stage[] = [basics, sequential, practice];
+export const stages: Stage[] = [basics, sequential, practice, apps];
 export const chapters: Chapter[] = stages.flatMap((s) => s.chapters);
 export const chapterIndex = new Map(chapters.map((c) => [c.id, c]));
 
