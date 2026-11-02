@@ -2,3 +2,6 @@ node_modules
 dist
 *.local
 .DS_Store
+
+# 开发过程验证截图，不纳入版本库
+v2-*.png

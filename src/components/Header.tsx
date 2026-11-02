@@ -12,6 +12,15 @@ export default function Header() {
             Learn&nbsp;<b>Verilog</b>
           </span>
         </Link>
+        <nav className="header-nav" aria-label="辅助功能">
+          <Link to="/cheatsheet" className="header-link">
+            语法速查
+          </Link>
+          <Link to="/notebook" className="header-link">
+            错题本
+            {p.starred.length > 0 ? ` (${p.starred.length})` : ''}
+          </Link>
+        </nav>
         <div className="header-right">
           <span className="chip" title="已完成练习数">
             {p.totalDone} / {totalExercises} 题

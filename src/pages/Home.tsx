@@ -1,122 +1,120 @@
-import { useNavigate } from 'react-router-dom';
-import { chapters, stages } from '../content';
+import { Link, useNavigate } from 'react-router-dom';
+import { stages, chapters } from '../content';
 import { useProgress, totalExercises } from '../progress';
+import { useTitle } from '../useTitle';
+import type { ReactNode } from 'react';
+
+const totalChapters = chapters.length;
 
 export default function Home() {
+  useTitle();
   const p = useProgress();
   const nav = useNavigate();
 
-  const fresh = p.totalDone === 0 && p.read.length === 0;
-  const pct = Math.round((p.totalDone / totalExercises) * 100);
-
-  const nextTarget = (): string => {
+  // 第一个尚未完成的练习，即「继续学习」的目标
+  const nextTarget = (() => {
     for (const ch of chapters) {
       for (const ex of ch.exercises) {
-        if (!p.isDone(ch.id, ex.id) && p.unlocked(ch.id, ex.id)) {
-          return `/ex/${ch.id}/${ex.id}`;
+        if (!p.isDone(ch.id, ex.id)) {
+          return { url: `/ex/${ch.id}/${ex.id}` };
         }
       }
     }
-    return '/read/00';
-  };
+    return null;
+  })();
+  const doneCount = p.totalDone;
 
   return (
-    <main>
+    <main className="container home">
       <section className="hero">
-        <div className="container">
-          <span className="chip">交互式 Verilog 教程 · 无需安装任何工具</span>
-          <h1>
-            在浏览器里
-            <br />
-            <span className="hero-accent">从零学会 Verilog</span>
-          </h1>
-          <p className="hero-sub">
-            像学编程一样学硬件：{chapters.length} 章课程、{totalExercises} 个在线练习，
-            内置仿真器即时运行你的代码——写模块、看波形、点亮每一题。
-          </p>
-          <div className="hero-cta">
-            {fresh ? (
-              <button className="btn btn-primary" onClick={() => nav('/read/00')}>
-                从第 00 章开始
-              </button>
-            ) : (
-              <button className="btn btn-primary" onClick={() => nav(nextTarget())}>
-                继续学习
-              </button>
-            )}
-            <button
-              className="btn btn-ghost"
-              onClick={() => document.getElementById('stages')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              查看课程大纲
+        <span className="chip">interactive · 交互式 Verilog 教程</span>
+        <h1>Learn Verilog</h1>
+        <p className="hero-sub">
+          从软件思维到硬件思维：在浏览器里写 Verilog、即时仿真、看波形，
+          一步步搭出门级电路、时序逻辑和真实硬件模块。
+        </p>
+        <div className="hero-actions">
+          {nextTarget ? (
+            <button className="btn btn-primary" onClick={() => nav(nextTarget.url)}>
+              {doneCount === 0 ? '开始学习' : '继续学习'} →
             </button>
-          </div>
-          {!fresh && (
-            <div className="hero-progress">
-              <div className="prog-track">
-                <div className="prog-fill" style={{ width: `${pct}%` }} />
-              </div>
-              <div className="prog-label">
-                总进度 {p.totalDone} / {totalExercises} 题（{pct}%）· 已读 {p.read.length} 章
-              </div>
-            </div>
+          ) : (
+            <button className="btn btn-primary" onClick={() => nav('/read/00')}>
+              从头开始
+            </button>
           )}
+        </div>
+        <div className="hero-meta">
+          <span>{totalChapters} 章</span>
+          <span>{totalExercises} 道练习</span>
+          <span>
+            已完成 {doneCount} / {totalExercises}
+          </span>
         </div>
       </section>
 
-      <section className="container stages" id="stages">
-        {stages.map((st) => (
-          <div className="stage" key={st.id}>
-            <div className="stage-head">
-              <h2>{st.title}</h2>
-              <p>
-                {st.tagline} —— {st.desc}
-              </p>
-            </div>
-            <div className="ch-grid">
-              {st.chapters.map((ch) => {
-                const unlockedCh = p.chapterUnlocked(ch.id);
-                const done = ch.exercises.filter((e) => p.isDone(ch.id, e.id)).length;
-                const chDone = p.chapterDone(ch.id);
-                return (
-                  <div
-                    key={ch.id}
-                    role="link"
-                    tabIndex={unlockedCh ? 0 : -1}
-                    onClick={() => unlockedCh && nav(`/read/${ch.id}`)}
-                    onKeyDown={(e) => {
-                      if (unlockedCh && (e.key === 'Enter' || e.key === ' ')) nav(`/read/${ch.id}`);
-                    }}
-                    className={`ch-card${unlockedCh ? '' : ' locked'}${chDone ? ' done' : ''}`}
-                  >
-                    <div className="ch-card-top">
-                      <span className="ch-num mono">{ch.id}</span>
-                      <div className="ch-titles">
-                        <h3>{ch.title}</h3>
-                        <p>{ch.subtitle}</p>
+      <section className="stages">
+        {stages.map((s) => {
+          const stageDone = s.chapters.filter((c) =>
+            c.exercises.every((e) => p.isDone(c.id, e.id))
+          ).length;
+          return (
+            <div className="stage-block" key={s.id}>
+              <div className="stage-head">
+                <div>
+                  <h2>{s.title}</h2>
+                  <p className="stage-tagline">{s.tagline}</p>
+                </div>
+                <span className="stage-count">
+                  {stageDone} / {s.chapters.length} 章
+                </span>
+              </div>
+              <p className="stage-desc">{s.desc}</p>
+              <div className="ch-grid">
+                {s.chapters.map((ch) => {
+                  const d = ch.exercises.filter((e) => p.isDone(ch.id, e.id)).length;
+                  const unlocked = p.chapterUnlocked(ch.id);
+                  const inner: ReactNode = (
+                    <>
+                      <div className="ch-card-top">
+                        <span className="ch-num">{ch.id}</span>
+                        {ch.exercises.every((e) => p.isDone(ch.id, e.id)) ? (
+                          <span className="ch-done-badge">✓</span>
+                        ) : d > 0 ? (
+                          <span className="ch-progress">{d}/{ch.exercises.length}</span>
+                        ) : null}
                       </div>
-                      {chDone && <span className="ch-done-dot" title="本章完成" />}
+                      <h3>{ch.title}</h3>
+                      <p className="ch-sub">{ch.subtitle}</p>
+                      <span className="ch-count">{ch.exercises.length} 练习</span>
+                    </>
+                  );
+                  return unlocked ? (
+                    <Link
+                      to={`/read/${ch.id}`}
+                      className={`ch-card ${d === ch.exercises.length ? 'done' : ''}`}
+                      key={ch.id}
+                    >
+                      {inner}
+                    </Link>
+                  ) : (
+                    <div className="ch-card locked" aria-disabled="true" key={ch.id}>
+                      {inner}
+                      <span className="lock-label">🔒 完成前一章后解锁</span>
                     </div>
-                    <div className="ch-card-foot">
-                      {unlockedCh ? (
-                        <span className="ch-meta">
-                          {p.isRead(ch.id) ? '已读' : '未读'} · {done}/{ch.exercises.length} 题
-                        </span>
-                      ) : (
-                        <span className="ch-lock">完成上一章后解锁</span>
-                      )}
-                      {unlockedCh && <span className="ch-go">阅读 →</span>}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
-        <p className="stages-foot">
-          三站进阶：语法与组合逻辑 → 时序与状态机 → 工程实践。逐章解锁，稳扎稳打。
-        </p>
+          );
+        })}
       </section>
+
+      <footer className="home-footer">
+        <p>
+          纯静态站点 · 学习进度保存在浏览器本地 · 源码与文档见 <code>TECHNICAL.md</code>
+        </p>
+      </footer>
     </main>
   );
 }

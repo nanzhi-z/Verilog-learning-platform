@@ -129,6 +129,33 @@ endmodule`,
     q <= d;
 
 endmodule`,
+          explain: [
+            { line: 2, text: '时钟 `clk`。' },
+            { line: 3, text: '数据输入 `d`。' },
+            { line: 4, text: '输出 `q`，声明为 reg。' },
+            { line: 7, text: '敏感列表 `posedge clk`：块只在时钟**上升沿**触发。' },
+            { line: 8, text: '**非阻塞赋值** `q <= d`：上升沿把 d 存入 q；两次时钟沿之间 q 保持不变，这就是记忆。' },
+          ],
+          steps: [
+            {
+              title: '确定触发时机',
+              text: '触发器只在时钟上升沿更新，敏感列表写 `always @(posedge clk)`。',
+            },
+            {
+              title: '用非阻塞赋值更新',
+              text: '时序逻辑用 `<=`，在上升沿把 d 装入 q：`q <= d;`。',
+              code: 'always @(posedge clk)\n  q <= d;',
+            },
+          ],
+          circuit: {
+            nodes: [
+              { id: 'd', kind: 'in', x: 0, y: 0 },
+              { id: 'clk', kind: 'in', x: 0, y: 2 },
+              { id: 'd1', kind: 'dff', x: 1, y: 0, inputs: ['d', 'clk'] },
+              { id: 'q', kind: 'out', x: 2, y: 0, inputs: ['d1'] },
+            ],
+            note: 'D 触发器：D 是数据输入，CLK 端的三角表示边沿触发；上升沿把 D 锁存到 Q。',
+          },
         },
         {
           id: '2',
@@ -202,6 +229,11 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 8, text: '敏感列表加 `posedge rst`：rst 的上升沿也会触发块，因此复位是**异步**的、不必等时钟。' },
+            { line: 9, text: 'rst 为 1 时，q 立刻清零。' },
+            { line: 11, text: 'rst 为 0 时，恢复正常触发器、在时钟沿采样 d。' },
+          ],
         },
         {
           id: '3',
@@ -270,6 +302,36 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 9, text: '**同步复位**：只在时钟上升沿才检查 rst、清零。' },
+            { line: 12, text: '`{q[5:0], d}`：把原 q 的低 6 位移到高位 [7:2]，低 2 位用新数据 d 补上，整体左移两位。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: '时序逻辑 always 块的敏感列表用什么？',
+          options: ['posedge clk（时钟边沿）', '@(*)', '空列表'],
+          answer: 0,
+          explain: '时序逻辑只在时钟边沿更新，敏感列表写 posedge clk。',
+        },
+        {
+          q: '时序逻辑里为什么用非阻塞赋值 <=？',
+          options: ['所有寄存器在同一沿同时更新，避免竞争与顺序依赖', '因为它更快', '语法要求'],
+          answer: 0,
+          explain: '<= 让块内所有赋值在沿结束时同时生效，右式都用更新前的旧值，符合真实寄存器并行更新。',
+        },
+        {
+          q: '异步复位和同步复位的区别是？',
+          options: ['异步复位立即生效、同步复位要等时钟沿', '两者相同', '同步复位更快'],
+          answer: 0,
+          explain: '异步复位写进敏感列表（posedge rst），拉高即生效；同步复位只在时钟沿检查。',
+        },
+        {
+          q: 'D 触发器在两次时钟沿之间，q 的行为是？',
+          options: ['保持不变', '跟随 d 变化', '立刻清零'],
+          answer: 0,
+          explain: '触发器有记忆，只在上升沿采样 d，其余时间保持，这正是时序逻辑与组合逻辑的区别。',
         },
       ],
     },
@@ -399,6 +461,11 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 10, text: '复位优先级最高，先判断。' },
+            { line: 12, text: 'en=1 时上升沿装载 d。' },
+            { line: 13, text: 'en=0 时块内什么都不写，触发器**自动保持**原值，无需显式 else。' },
+          ],
         },
         {
           id: '2',
@@ -474,6 +541,10 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 9, text: '`assign dout = q[3]`：组合读出最高位，reg 可以被 assign 读取。' },
+            { line: 15, text: '`{q[2:0], din}`：q 左移一位，din 进入最低位；数据像传送带，4 拍后才到达 q[3] 输出。' },
+          ],
         },
         {
           id: '3',
@@ -534,6 +605,36 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 9, text: '复位值是 `4\'b0001`（不是 0），预置一个 1。' },
+            { line: 11, text: '`{q[2:0], q[3]}`：循环左移，把移出的最高位 q[3] 接回最低位，使唯一的 1 循环流动。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: '带使能寄存器 en=0 时，如何让 q 保持？',
+          options: ['块内不写赋值即可，触发器自动保持', '写 q <= q', '写 q = 0'],
+          answer: 0,
+          explain: '时钟沿未给 reg 赋新值时，它自然保持原值，这是寄存器的基本行为。',
+        },
+        {
+          q: 'SISO 移位寄存器中，一位数据从 din 到 q[3] 需几拍？',
+          options: ['4 拍', '1 拍', '2 拍'],
+          answer: 0,
+          explain: '每拍移动一位，4 位寄存器需 4 拍，可做延迟线。',
+        },
+        {
+          q: '环形计数器循环左移的关键写法是？',
+          options: ['{q[2:0], q[3]}', '{q[3], q[2:0]}', '{q, 1}'],
+          answer: 0,
+          explain: '把最高位 q[3] 放到拼接末尾（最低位），实现首尾相接。',
+        },
+        {
+          q: '寄存器的复位和使能，通常谁优先级更高？',
+          options: ['复位', '使能', '同级'],
+          answer: 0,
+          explain: '复位优先：先 if(rst)，再 else if(en)，保证复位随时能把寄存器清回已知状态。',
         },
       ],
     },
@@ -654,6 +755,22 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 8, text: '同步复位清零。' },
+            { line: 11, text: '`q <= q + 1`：每拍加一；加法是 4 位，15+1=16 被截断为 0，**自动回绕**。' },
+          ],
+          steps: [
+            {
+              title: '复位分支',
+              text: 'if (rst) 时 q 清 0。',
+              code: 'if (rst)\n  q <= 4\'d0;',
+            },
+            {
+              title: '计数分支',
+              text: 'else 时 q 加一，靠位宽截断实现 15→0 回绕。',
+              code: 'else\n  q <= q + 1;',
+            },
+          ],
         },
         {
           id: '2',
@@ -721,6 +838,10 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 10, text: '**数到 9 显式回 0**，下一拍直接归零，避免出现 10–15 的非法 BCD 码。' },
+            { line: 13, text: '其余情况正常加一。' },
+          ],
         },
         {
           id: '3',
@@ -803,6 +924,38 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 11, text: '复位优先级最高。' },
+            { line: 13, text: 'load 次之，装载 d。' },
+            { line: 15, text: 'up=1 加一。' },
+            { line: 18, text: 'up=0 减一；减到 0 再减自然回绕到 15。三个 else-if 按优先级排列。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: '4 位计数器 15 之后为什么能自动回 0？',
+          options: ['4 位加法 15+1=16 被截断为 0', '需要显式判断', '编译器特殊处理'],
+          answer: 0,
+          explain: '加法按位宽截断，16=10000 只保留低 4 位即 0000。',
+        },
+        {
+          q: 'BCD 计数器为何要在 q==9 时显式回 0？',
+          options: ['否则会出现 10–15 非法码', '否则无法计数', '为了复位'],
+          answer: 0,
+          explain: 'BCD 只允许 0–9，9 之后必须回 0，不能让 4 位自然走到 1010–1111。',
+        },
+        {
+          q: '多功能计数器中复位、装载、加减的优先级正确顺序是？',
+          options: ['复位 > 装载 > 加减', '加减 > 装载 > 复位', '装载 > 复位 > 加减'],
+          answer: 0,
+          explain: '用 if / else if / else 串成优先级链，复位最高。',
+        },
+        {
+          q: '4 位减计数器 0 再减 1 的结果是？',
+          options: ['15', '0', '−1'],
+          answer: 0,
+          explain: '硬件无符号减法 0-1 回绕到 15（1111）。',
         },
       ],
     },
@@ -935,6 +1088,22 @@ endmodule`,
   assign pe = btn & ~prev;
 
 endmodule`,
+          explain: [
+            { line: 9, text: '每拍把当前 btn 记录到 prev，延迟一拍。' },
+            { line: 11, text: '`pe = btn & ~prev`：当前为 1、上一拍为 0，即**上升沿**；下一拍 prev 变 1 后 pe 自动拉低，只持续一个周期。' },
+          ],
+          steps: [
+            {
+              title: '打一拍记录旧值',
+              text: '用寄存器 prev 每拍保存 btn。',
+              code: 'always @(posedge clk)\n  prev <= btn;',
+            },
+            {
+              title: '组合比较新旧值',
+              text: '当前为 1 且旧值为 0 即上升沿。',
+              code: 'assign pe = btn & ~prev;',
+            },
+          ],
         },
         {
           id: '2',
@@ -990,6 +1159,9 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 11, text: '每拍把自己取反 `clk2 <= ~clk2`：一个完整周期需要两个时钟沿，故输出频率是输入的一半（二分频）。' },
+          ],
         },
         {
           id: '3',
@@ -1061,6 +1233,36 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 9, text: '复位到非零种子 `0001`；LFSR 不能从全 0 启动（全 0 会一直锁在全 0）。' },
+            { line: 11, text: '反馈位 `q[3] ^ q[0]`（本原多项式 x⁴+x+1）移入最低位，序列遍历 15 个非零状态后回到种子。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: '上升沿检测 pe = btn & ~prev 的核心思路是？',
+          options: ['把 btn 打一拍，再比较当前与上一拍', '直接对 btn 取反', '计数 btn'],
+          answer: 0,
+          explain: 'prev 延迟一拍，当前为 1、旧值为 0 即跳变，输出恰好一个周期。',
+        },
+        {
+          q: '二分频器每拍做什么？',
+          options: ['翻转自己 q <= ~q', '加一', '保持'],
+          answer: 0,
+          explain: '翻转使周期翻倍，频率减半。',
+        },
+        {
+          q: 'LFSR 为什么不能用全 0 作为种子？',
+          options: ['全 0 反馈仍是 0，会永远锁在全 0', '硬件不允许', '会报错'],
+          answer: 0,
+          explain: '全 0 时异或反馈为 0，无法进入其他状态，所以必须用非零种子。',
+        },
+        {
+          q: '4 位最大长度 LFSR 的周期是？',
+          options: ['15', '16', '4'],
+          answer: 0,
+          explain: 'n 位最大长度 LFSR 遍历 2^n−1 个非零状态，4 位即 15。',
         },
       ],
     },
@@ -1190,6 +1392,11 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 9, text: '复位清零。' },
+            { line: 11, text: 't=1 时翻转 q；t=0 时块内不赋值、自动保持。' },
+            { line: 12, text: '这是只有 0/1 两个状态的最小状态机。' },
+          ],
         },
         {
           id: '2',
@@ -1283,6 +1490,29 @@ endmodule`,
 
   assign z = (state == S3);
 endmodule`,
+          explain: [
+            { line: 14, text: 'S0：见到 1 进 S1，否则留 S0。' },
+            { line: 15, text: 'S1：再见到 1 留在 S1，见到 0 进 S2。' },
+            { line: 16, text: 'S2：见到 1 进 S3（凑齐 101），否则回 S0。' },
+            { line: 17, text: 'S3：**重叠关键**——见到 0 进 S2（已含「10」），使 10101 能命中两次。' },
+            { line: 22, text: '**Moore 输出** z 只取决于状态，进入 S3 下一拍 z=1。' },
+          ],
+          steps: [
+            {
+              title: '定义状态',
+              text: '用 localparam 定义 S0–S3，分别表示已匹配 空、1、10、101。',
+              code: 'localparam S0=2\'d0, S1=2\'d1, S2=2\'d2, S3=2\'d3;',
+            },
+            {
+              title: '写状态转移',
+              text: '在 case 中按当前状态和输入 x 决定下一状态；注意 S3 回 S2 以支持重叠。',
+            },
+            {
+              title: '写 Moore 输出',
+              text: 'Moore 输出只由状态决定：z = (state == S3)。',
+              code: 'assign z = (state == S3);',
+            },
+          ],
         },
         {
           id: '3',
@@ -1377,6 +1607,10 @@ endmodule`,
 
   assign z = (state == S3) & x;
 endmodule`,
+          explain: [
+            { line: 17, text: 'S3 见到 0 回 S2，支持重叠。' },
+            { line: 22, text: '**Mealy 输出** z = (state==S3) & x，同时取决于状态和当前输入；检测到 1011 当拍即输出，比 Moore 快一拍。' },
+          ],
         },
         {
           id: '4',
@@ -1463,6 +1697,38 @@ endmodule`,
 
   assign pulse = (state == FIRE);
 endmodule`,
+          explain: [
+            { line: 14, text: 'IDLE 中按下 btn，进 FIRE。' },
+            { line: 15, text: 'FIRE 只停留一拍、无条件进 WAIT，保证脉冲只有一个周期。' },
+            { line: 16, text: 'WAIT 中按住不放就留守，松开才回 IDLE，实现防重触发。' },
+            { line: 21, text: 'pulse 只在 FIRE 状态输出一个时钟宽。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: 'Moore 输出和 Mealy 输出的区别是？',
+          options: ['Moore 只取决于状态，Mealy 还取决于当前输入', 'Moore 更快', '两者相同'],
+          answer: 0,
+          explain: 'Moore 输出写为 (state==S3)，进入状态后下一拍才输出；Mealy 写为 (state==S3)&x，当拍即输出。',
+        },
+        {
+          q: '101 重叠检测中，S3 见到 0 应转到哪个状态？',
+          options: ['S2（已含「10」）', 'S0', 'S1'],
+          answer: 0,
+          explain: 'S3 后输入 0，新序列已匹配「10」，直接回 S2 才能让 10101 命中两次。',
+        },
+        {
+          q: '为什么三段式 FSM 推荐用 localparam 命名状态？',
+          options: ['可读性好、避免裸数字、便于综合枚举', '能省寄存器', '语法要求'],
+          answer: 0,
+          explain: 'localparam 给状态编码起有意义的名字，是 FSM 的标准写法。',
+        },
+        {
+          q: '单脉冲发生器用 WAIT 状态的目的是？',
+          options: ['等待按钮松开，防止按住期间重复触发', '延长脉冲', '等待时钟'],
+          answer: 0,
+          explain: 'FIRE 后进入 WAIT，只有松开才回 IDLE，保证一次按下只输出一个脉冲。',
         },
       ],
     },
@@ -1622,6 +1888,12 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 2, text: '参数 W 默认 8，可被 `#(.W(6))` 覆盖。' },
+            { line: 6, text: 'q 的位宽 `[W-1:0]` 随参数伸缩。' },
+            { line: 11, text: '`q <= 0` 自动按 W 位宽取 0，无需写死。' },
+            { line: 13, text: '加一，数到 2^W−1 后靠位宽截断回 0。' },
+          ],
         },
         {
           id: '2',
@@ -1702,6 +1974,12 @@ module adder4 (
   fulladd u2(.a(a[2]), .b(b[2]), .cin(c2),  .s(s[2]), .cout(c3));
   fulladd u3(.a(a[3]), .b(b[3]), .cin(c3),  .s(s[3]), .cout(cout));
 endmodule`,
+          explain: [
+            { line: 15, text: '声明 3 根中间进位线 c1、c2、c3。' },
+            { line: 17, text: '第 0 位全加器，进位写入 c1。' },
+            { line: 18, text: '第 1 位的进位输入接 c1，输出 c2。' },
+            { line: 20, text: '进位像波浪一样 c1→c2→c3→cout 逐位传递，故称行波进位。' },
+          ],
         },
         {
           id: '3',
@@ -1763,6 +2041,38 @@ endmodule`,
   assign n = cnt(d);
 
 endmodule`,
+          explain: [
+            { line: 6, text: '定义函数 `cnt`，返回 4 位（最多 8 个 1）。' },
+            { line: 10, text: '函数内先把计数清零。' },
+            { line: 11, text: 'for 循环逐位检查，v[i] 为 1 就累加。' },
+            { line: 17, text: '像数学函数一样调用 `cnt(d)`；函数综合成纯组合逻辑。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: 'parameter 和 localparam 的区别是？',
+          options: ['parameter 可被实例化覆盖，localparam 是模块私有常量', '两者相同', 'localparam 可覆盖'],
+          answer: 0,
+          explain: 'parameter 是对外可配置的参数；localparam 常用于派生值，外部不能改。',
+        },
+        {
+          q: '层次化设计中，命名端口连接 `.port(signal)` 的好处是？',
+          options: ['不依赖端口顺序、可读性强、不易连错', '能减少连线', '语法更短'],
+          answer: 0,
+          explain: '命名连接与端口声明顺序无关，复杂模块尤其推荐，位选择也可直接连。',
+        },
+        {
+          q: '行波进位加法器的进位特点是？',
+          options: ['进位逐位串行传递，速度受链长限制', '所有位同时进位', '没有进位'],
+          answer: 0,
+          explain: '每一级等前一级进位稳定，位越多延迟越大；优点是结构简单。',
+        },
+        {
+          q: 'Verilog 函数（function）综合成什么电路？',
+          options: ['纯组合逻辑', '时序逻辑', '存储'],
+          answer: 0,
+          explain: '函数不能有延时和事件控制，在零时间内算出结果，对应组合逻辑。',
         },
       ],
     },
@@ -1881,6 +2191,12 @@ endmodule`,
   assign frame = {wr, addr, data};
 
 endmodule`,
+          explain: [
+            { line: 2, text: '1 位控制位 wr。' },
+            { line: 3, text: '4 位地址 addr。' },
+            { line: 4, text: '8 位数据 data。' },
+            { line: 8, text: '拼接 1+4+8=13 位，wr 在最高位 [12]，data 在低 8 位。' },
+          ],
         },
         {
           id: '2',
@@ -1925,6 +2241,9 @@ endmodule`,
   assign y = {{4{a[3]}}, a};
 
 endmodule`,
+          explain: [
+            { line: 6, text: '复制运算符 `{{4{a[3]}}}` 把符号位 a[3] 复制 4 份填到高 4 位；负数（如 1001）扩展为 1111_1001，正数补 0，数值不变。' },
+          ],
         },
         {
           id: '3',
@@ -2005,6 +2324,36 @@ endmodule`,
   assign g = bin ^ (bin >> 1);
 
 endmodule`,
+          explain: [
+            { line: 12, text: '内部是普通二进制计数器 bin。' },
+            { line: 15, text: '`bin ^ (bin>>1)` 一步转格雷：每一位与它前一位异或，输出相邻值仅一位变化。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: '拼接 {a, b, c} 中，哪个在结果的最高位？',
+          options: ['a（最左边）', 'c（最右边）', 'b'],
+          answer: 0,
+          explain: '左高右低，最左边的表达式占最高位。',
+        },
+        {
+          q: '复制运算符 {{4{a[3]}} 的作用是？',
+          options: ['把 a[3] 重复 4 份，常用于符号扩展', '把 a 乘 4', '取 a 的 4 位'],
+          answer: 0,
+          explain: '内层 {N{...}} 表示重复 N 次，是符号扩展和造常量的标准写法。',
+        },
+        {
+          q: '二进制转格雷码的公式是？',
+          options: ['g = bin ^ (bin >> 1)', 'g = bin + 1', 'g = ~bin'],
+          answer: 0,
+          explain: '每位与前一位异或即可，相邻格雷值仅一位不同。',
+        },
+        {
+          q: '格雷码用于跨时钟域或旋转编码器的主要原因是？',
+          options: ['相邻值仅一位变化，避免多位同时跳变的毛刺/误读', '计数更快', '更省位数'],
+          answer: 0,
+          explain: '普通二进制多位同时翻转时采样可能读到中间值，格雷码消除了这一问题。',
         },
       ],
     },
@@ -2137,6 +2486,11 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 14, text: '计数到 N−1 时，清零计数并把 tick 拉高。' },
+            { line: 16, text: 'tick 只高这一拍，下一拍进入 else 被拉低。' },
+            { line: 18, text: '其余拍计数加一，于是每 N 拍产生一个单拍脉冲。' },
+          ],
         },
         {
           id: '2',
@@ -2225,6 +2579,10 @@ endmodule`,
   assign pwm = (phase < duty);
 
 endmodule`,
+          explain: [
+            { line: 12, text: 'phase 数到 7 后回 0，循环扫一个周期。' },
+            { line: 18, text: '`phase < duty` 时输出高：duty 越大高电平拍数越多，占空比 = duty/8，决定平均能量（亮度/转速）。' },
+          ],
         },
         {
           id: '3',
@@ -2315,6 +2673,38 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 16, text: '上升过程中到顶（MAX）：减一并把 dir 翻为下降。' },
+            { line: 20, text: '未到顶则继续加一。' },
+            { line: 22, text: '下降过程中到底（0）：加一并翻回上升。' },
+            { line: 26, text: '未到底则继续减一；level 形成三角波，驱动 PWM 即得到呼吸效果。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: '周期脉冲发生器的 tick 高电平持续多久？',
+          options: ['一个时钟周期', 'N 个周期', '一直保持'],
+          answer: 0,
+          explain: '数到 N−1 当拍拉高，下一拍拉低，是单拍使能脉冲。',
+        },
+        {
+          q: 'PWM 中占空比由什么决定？',
+          options: ['duty（高电平时间占比）', '时钟频率', 'phase 位宽'],
+          answer: 0,
+          explain: 'phase < duty 时输出高，duty/周期 即占空比，决定平均输出。',
+        },
+        {
+          q: '呼吸灯的 level 波形是？',
+          options: ['先增后减的三角波', '方波', '恒定值'],
+          answer: 0,
+          explain: '到顶转下降、到底转上升，level 三角波扫过 PWM 占空比。',
+        },
+        {
+          q: '为何常用单拍 tick 脉冲而非每拍都使能慢速外设？',
+          options: ['让外设在更低的有效速率工作，且保持与主时钟同步', '省代码', '为了复位'],
+          answer: 0,
+          explain: 'tick 是时钟的整数分频，外设检测到 tick 才动作，既降速又保持同步设计。',
         },
       ],
     },

@@ -6,9 +6,11 @@ const KEY = 'lv-progress-v1';
 export interface Progress {
   completed: string[]; // exKeys "01/2"
   read: string[]; // chapter ids
+  starred: string[]; // bookmarked / wrong-question exKeys
+  notes: Record<string, string>; // exKey → personal note
 }
 
-const empty: Progress = { completed: [], read: [] };
+const empty: Progress = { completed: [], read: [], starred: [], notes: {} };
 
 function load(): Progress {
   try {
@@ -16,7 +18,12 @@ function load(): Progress {
     if (!raw) return empty;
     const p = JSON.parse(raw);
     if (!Array.isArray(p.completed) || !Array.isArray(p.read)) return empty;
-    return { completed: p.completed, read: p.read };
+    return {
+      completed: p.completed,
+      read: p.read,
+      starred: Array.isArray(p.starred) ? p.starred : [],
+      notes: p.notes && typeof p.notes === 'object' ? p.notes : {},
+    };
   } catch {
     return empty;
   }
@@ -47,6 +54,11 @@ export function useProgress(): Progress & {
   /** chapter content accessible (reading + first exercise) */
   chapterUnlocked: (cid: string) => boolean;
   totalDone: number;
+  /** starred / wrong-question book */
+  isStarred: (cid: string, eid: string) => boolean;
+  toggleStar: (cid: string, eid: string) => void;
+  getNote: (cid: string, eid: string) => string;
+  setNote: (cid: string, eid: string, text: string) => void;
 } {
   const [, force] = useState(0);
   useEffect(() => {
@@ -110,7 +122,36 @@ export function useProgress(): Progress & {
   }, []);
 
   const reset = useCallback(() => {
-    current = { completed: [], read: [] };
+    current = { completed: [], read: [], starred: [], notes: {} };
+    emit();
+  }, []);
+
+  const isStarred = useCallback(
+    (cid: string, eid: string) => current.starred.includes(exKey(cid, eid)),
+    []
+  );
+
+  const toggleStar = useCallback((cid: string, eid: string) => {
+    const k = exKey(cid, eid);
+    if (current.starred.includes(k)) {
+      current = { ...current, starred: current.starred.filter((x) => x !== k) };
+    } else {
+      current = { ...current, starred: [...current.starred, k] };
+    }
+    emit();
+  }, []);
+
+  const getNote = useCallback(
+    (cid: string, eid: string) => current.notes[exKey(cid, eid)] ?? '',
+    []
+  );
+
+  const setNote = useCallback((cid: string, eid: string, text: string) => {
+    const k = exKey(cid, eid);
+    const notes = { ...current.notes };
+    if (text.trim()) notes[k] = text;
+    else delete notes[k];
+    current = { ...current, notes };
     emit();
   }, []);
 
@@ -125,6 +166,10 @@ export function useProgress(): Progress & {
     chapterDone,
     chapterUnlocked,
     totalDone: current.completed.length,
+    isStarred,
+    toggleStar,
+    getNote,
+    setNote,
   };
 }
 

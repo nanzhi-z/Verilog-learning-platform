@@ -121,6 +121,24 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 7, text: '组合逻辑用 `always @(*)` + 阻塞赋值。' },
+            { line: 9, text: 'op=00 按位与。' },
+            { line: 10, text: 'op=01 按位或。' },
+            { line: 11, text: 'op=10 加法，超 4 位自然截断。' },
+            { line: 12, text: 'default 做减法，同时兜住未列出的情况。' },
+          ],
+          steps: [
+            {
+              title: '搭组合骨架',
+              text: 'always @(*) + case(op) 是 ALU 的标准结构。',
+              code: 'always @(*) begin\n  case (op)\n  endcase\nend',
+            },
+            {
+              title: '填四种运算',
+              text: '00 与、01 或、10 加、default 减，分别给 y 赋值。',
+            },
+          ],
         },
         {
           id: '2',
@@ -269,6 +287,37 @@ endmodule`,
   assign p  = ae * be;
 
 endmodule`,
+          explain: [
+            { line: 7, text: '把 a 零扩展到 8 位。' },
+            { line: 8, text: '把 b 零扩展到 8 位。' },
+            { line: 9, text: '相乘：4×4 最大 15×15=225，正好放进 8 位。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: 'ALU 中用 case 实现多种运算时，最后一支为什么推荐用 default？',
+          options: ['兜住未列出的输入，避免组合逻辑产生锁存器', '让仿真更快', '语法要求'],
+          answer: 0,
+          explain: '组合 always 必须在所有输入下都赋值，default 是最稳妥的兜底。',
+        },
+        {
+          q: '无符号加法的进位（carry）和有符号溢出（overflow）是一回事吗？',
+          options: ['不是；carry 看最高位进位，overflow 看符号位变化', '完全相同', '只有减法才不同'],
+          answer: 0,
+          explain: 'carry 是无符号溢出，overflow 是同号相加变号；两者判据不同。',
+        },
+        {
+          q: 'a - b 用加法器实现的技巧是？',
+          options: ['a + ~b + 1（取反加一）', 'a + b', '~a + b'],
+          answer: 0,
+          explain: '减一个数等于加它的补码，即按位取反后加一。',
+        },
+        {
+          q: '4 位乘法器为什么要把操作数先零扩展到 8 位？',
+          options: ['容纳最大 225 的乘积，避免位宽不足', '为了好看', '时钟要求'],
+          answer: 0,
+          explain: '两个 4 位数相乘结果最多 8 位，扩展后再乘保证不丢位。',
         },
       ],
     },
@@ -493,6 +542,10 @@ endmodule`,
     endcase
   end
 endmodule`,
+          explain: [
+            { line: 9, text: '**时序写口**：复位清零，we=1 时按写地址 wa 选中一组寄存器写入。' },
+            { line: 22, text: '**组合读口**：按读地址 ra 立即把对应寄存器引到 rd，无需时钟。' },
+          ],
         },
         {
           id: '3',
@@ -566,6 +619,36 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 8, text: 'if-else 链从上到下判断，**先判到的高位优先**，这正是优先级的来源。' },
+            { line: 16, text: '全 0 时没有有效输入，valid 拉低。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: '寄存器堆的读口为什么用组合 always @(*)？',
+          options: ['读地址一变就应立即输出，无需等时钟', '因为读口更快', '为了省寄存器'],
+          answer: 0,
+          explain: '读操作是把选中寄存器组合引出，写操作才需要时钟边沿。',
+        },
+        {
+          q: 'SIPO 串入并出寄存器的移位写法是？',
+          options: ['q <= {q[6:0], d}', 'q <= d', 'q <= {d, q}'],
+          answer: 0,
+          explain: '整体左移一位，新数据 d 补到最低位。',
+        },
+        {
+          q: '优先编码器实现「高位优先」的关键结构是？',
+          options: ['按位从高到低的 if-else 链', 'case 语句', 'for 循环'],
+          answer: 0,
+          explain: 'if-else 先判断的分支优先级高，从 a[7] 往下排即可。',
+        },
+        {
+          q: '优先编码器输入全 0 时 valid 应为？',
+          options: ['0（无有效输入）', '1', '与 pos 相同'],
+          answer: 0,
+          explain: 'valid 用来区分「有一个 0 号输入」和「根本没有输入」两种情况。',
         },
       ],
     },
@@ -754,6 +837,30 @@ endmodule`,
     end
   end
 endmodule`,
+          explain: [
+            { line: 12, text: 'full/empty 完全由计数 count 决定，不必比较指针。' },
+            { line: 20, text: '**写**：未满时按写指针 wptr 选存储单元写入，指针加一。' },
+            { line: 29, text: '**读**：非空时按读指针 rptr 选单元送到 rdata（下一拍有效），指针加一。' },
+            { line: 38, text: '同时读写 count 不变；只写加一、只读减一。' },
+          ],
+          steps: [
+            {
+              title: '建存储与指针',
+              text: '4 个独立寄存器 + 写指针 wptr、读指针 rptr、计数 count。',
+            },
+            {
+              title: '写逻辑',
+              text: 'we 且 !full 时按 wptr 写入并推进指针。',
+            },
+            {
+              title: '读逻辑',
+              text: 're 且 !empty 时按 rptr 弹出到 rdata 并推进指针。',
+            },
+            {
+              title: '更新 count 与标志',
+              text: '读写同时发生时 count 不变；full = count==4、empty = count==0。',
+            },
+          ],
         },
         {
           id: '2',
@@ -934,6 +1041,37 @@ endmodule`,
     end
   end
 endmodule`,
+          explain: [
+            { line: 10, text: '读端总是引出「非正在写入」的那块缓冲，保证读到完整数据。' },
+            { line: 16, text: '写端只写当前缓冲。' },
+            { line: 20, text: 'swap 翻转 sel，两块缓冲角色互换，实现无缝乒乓。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: '同步 FIFO 的 full/empty 最直接由什么决定？',
+          options: ['数据计数 count', '指针之差（需额外比较）', '时钟频率'],
+          answer: 0,
+          explain: '维护 count 后，full = count==深度、empty = count==0，最直观。',
+        },
+        {
+          q: 'FIFO 同一拍既写又读时，count 如何变化？',
+          options: ['不变', '加一', '减一'],
+          answer: 0,
+          explain: '进一个、出一个，余量不变；只写加一、只读减一。',
+        },
+        {
+          q: 'FIFO 满时再写、空时再读应如何处理？',
+          options: ['忽略，full/empty 状态保持', '强行读写', '复位'],
+          answer: 0,
+          explain: '写条件加 !full、读条件加 !empty，避免溢出和下溢。',
+        },
+        {
+          q: '乒乓双缓冲（ping-pong）的核心目的是？',
+          options: ['一块写入时另一块稳定可读，避免读到半成品', '节省一半存储', '加快时钟'],
+          answer: 0,
+          explain: '两块缓冲交替工作，写满一块后切换，读端始终面对完整数据。',
         },
       ],
     },
@@ -1085,6 +1223,28 @@ endmodule`,
       tick <= tick + 2'd1;
   end
 endmodule`,
+          explain: [
+            { line: 13, text: 'txd 组合输出：idle/停止位为 1，起始位为 0，数据位输出 sh[0]。' },
+            { line: 15, text: 'busy：非 idle 即忙。' },
+            { line: 22, text: 'start 时装载 data 到移位寄存器、进入起始位。' },
+            { line: 24, text: 'tick 每 4 拍（OVER=4）走一个位。' },
+            { line: 30, text: '数据位右移，**LSB 先出**，高位补 1。' },
+            { line: 27, text: '停止位结束后回 idle。' },
+          ],
+          steps: [
+            {
+              title: '定义状态与位计数',
+              text: 'state 0=idle、1=start、2..9=data、10=stop；tick 计 0..3。',
+            },
+            {
+              title: '写 txd 组合输出',
+              text: '按状态输出 1/0/数据位，busy = state != 0。',
+            },
+            {
+              title: '写状态机',
+              text: 'idle 等 start 装载；每 4 拍推进一位，数据位右移；stop 后回 idle。',
+            },
+          ],
         },
         {
           id: '2',
@@ -1341,6 +1501,40 @@ endmodule`,
     end
   end
 endmodule`,
+          explain: [
+            { line: 15, text: 'busy：cs 拉低即忙。' },
+            { line: 23, text: 'start 时装载数据，sdo 先放最高位，cs 拉低。' },
+            { line: 29, text: '每 HALF=2 拍翻转一次 sclk。' },
+            { line: 30, text: 'sclk 当前为 1 时翻转即下降沿，模式 0 在下降沿换数据。' },
+            { line: 34, text: '左移、输出下一位，**MSB 先**。' },
+            { line: 32, text: '发完 8 位拉高 cs，结束传输。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: 'UART 一帧的位顺序是？',
+          options: ['起始位0 + 8 数据位(LSB先) + 停止位1', '8 数据位 + 时钟', '停止位 + 起始位'],
+          answer: 0,
+          explain: 'UART 空闲为 1，起始位拉低，数据低位先发，最后停止位回到 1。',
+        },
+        {
+          q: 'UART 没有时钟线，收发双方靠什么对齐？',
+          options: ['约定波特率，接收机在位中点采样', '靠 CS 信号', '靠数据线编号'],
+          answer: 0,
+          explain: '每位固定 OVER 个 clk，检测起始位后错开半位、在中点采样最抗抖动。',
+        },
+        {
+          q: 'SPI 模式 0 中，数据在哪个边沿改变、哪个边沿采样？',
+          options: ['下降沿改变、上升沿采样', '上升沿改变、下降沿采样', '都在上升沿'],
+          answer: 0,
+          explain: '模式 0：CPOL=0、CPHA=0，下降沿换好数据，上升沿稳定采样。',
+        },
+        {
+          q: 'SPI 与 UART 的一个关键区别是？',
+          options: ['SPI 有独立时钟线 SCLK 且用 CS 片选，UART 没有时钟线', 'SPI 是并行的', 'UART 更快'],
+          answer: 0,
+          explain: 'SPI 四根线（CS/SCLK/MOSI/MISO），靠时钟同步；UART 靠约定波特率。',
         },
       ],
     },
@@ -1452,6 +1646,12 @@ endmodule`,
     endcase
   end
 endmodule`,
+          explain: [
+            { line: 8, text: '数字 0 点亮 a–f 段、熄灭 g 段（7E）。' },
+            { line: 9, text: '数字 1 只亮 b、c 两段（30）。' },
+            { line: 16, text: '数字 8 七段全亮（7F）。' },
+            { line: 17, text: 'default 兜住数字 9 及非法值。' },
+          ],
         },
         {
           id: '2',
@@ -1628,6 +1828,38 @@ endmodule`,
     end
   end
 endmodule`,
+          explain: [
+            { line: 8, text: '先求 5 位二进制和（拓宽一位容纳进位）。' },
+            { line: 11, text: '和为 10~15 或本身有进位，十进制需要修正。' },
+            { line: 12, text: '**加 6**：把 16 进位差的 6 补回来，本位即正确十进制数字。' },
+            { line: 13, text: '同时置十进制进位 cout=1。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: '多位数码管「同时」显示不同数字，靠的是？',
+          options: ['快速扫描，利用视觉暂留', '每位配 8 根线', '更高时钟'],
+          answer: 0,
+          explain: '每拍只点亮一只管并快速轮换，看起来就同时亮，且省引脚。',
+        },
+        {
+          q: '本课程约定 seg = {a,b,c,d,e,f,g}，数字 8 的编码是？',
+          options: ['7\'h7F（七段全亮）', '7\'h7E', '7\'h30'],
+          answer: 0,
+          explain: '8 字形七段全部点亮，g 段也亮，故为 7F。',
+        },
+        {
+          q: 'BCD 加法中，和超过 9 时为什么要加 6？',
+          options: ['二进制 16 才进位、十进制 10 就进位，差 6', '为了凑整', '让数码管更亮'],
+          answer: 0,
+          explain: '加 6 后产生正确进位，本位留下十进制数字，如 7+5=12。',
+        },
+        {
+          q: 'BCD 用几位二进制表示一个十进制位？',
+          options: ['4 位（0000–1001）', '8 位', '2 位'],
+          answer: 0,
+          explain: '每个十进制位用 4 位二进制单独表示，1010–1111 为非法码。',
         },
       ],
     },
@@ -1820,6 +2052,28 @@ endmodule`,
     endcase
   end
 endmodule`,
+          explain: [
+            { line: 15, text: '复位进 MG 态，装载绿灯时长。' },
+            { line: 16, text: 'timer 非 0 就每拍递减。' },
+            { line: 19, text: '减到 0 换态，2 位宽度下 state+1 自然回绕。' },
+            { line: 20, text: '按新状态重装时长：绿态装 T_GREEN，黄态装 T_YELLOW。' },
+            { line: 30, text: 'MG 态：主路绿、支路红（100001）。' },
+            { line: 32, text: 'SG 态：主路红、支路绿（001100）。' },
+          ],
+          steps: [
+            {
+              title: '画状态图',
+              text: 'MG→MY→SG→SY 四态，标出每态时长。',
+            },
+            {
+              title: '写时序定时块',
+              text: '复位、timer 递减、减到 0 换态并按新态重装。',
+            },
+            {
+              title: '写组合灯输出',
+              text: 'case(state) 给六灯赋值，用拼接左值更紧凑。',
+            },
+          ],
         },
         {
           id: '2',
@@ -2012,6 +2266,38 @@ endmodule`,
     end
   end
 endmodule`,
+          explain: [
+            { line: 9, text: 'tick=1 才计时，tick=0 全部保持。' },
+            { line: 10, text: '百分秒位逢 9 清零。' },
+            { line: 12, text: '同时秒个位逢 9 清零，向十位进位。' },
+            { line: 14, text: '三级 BCD 嵌套进位，与手算竖式同构。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: '交通灯把「定时」和「点灯」分开的两块分别是？',
+          options: ['时序块管换态时机，组合块管灯输出', '都在一个块', '组合块管定时'],
+          answer: 0,
+          explain: '「什么时候变」与「变到什么」分开，避免互相污染，是 Moore 机标准结构。',
+        },
+        {
+          q: '交通灯 state 用 2 位，从 SY 执行 state+1 会怎样？',
+          options: ['自然回绕到 MG（0）', '停在 SY', '变成 4'],
+          answer: 0,
+          explain: '2 位宽度下 3+1 截断为 0，无需额外 if 判断。',
+        },
+        {
+          q: '密码锁的 state 记录的是什么？',
+          options: ['已匹配密码的位数（进度）', '当前时间', '失败次数'],
+          answer: 0,
+          explain: 'state 即匹配进度，匹配推进、失配归零。',
+        },
+        {
+          q: '密码锁 unlock 置 1 后为什么能保持？',
+          options: ['寄存器在未被赋值时保持原值', '用了锁存器', '时钟停止'],
+          answer: 0,
+          explain: '之后分支不再给 unlock 赋值，寄存器天然保持，直到复位。',
         },
       ],
     },
@@ -2154,6 +2440,28 @@ endmodule`,
     end
   end
 endmodule`,
+          explain: [
+            { line: 15, text: '余额加本次硬币 ≥ 15，满足出货条件。' },
+            { line: 16, text: 'dispense 拉高一拍出货。' },
+            { line: 17, text: '恰好 20 时 change 拉高找零（多投 5）。' },
+            { line: 18, text: '出货后余额清零。' },
+            { line: 20, text: '不足则累加余额。' },
+            { line: 25, text: '**关键**：无投币拍也要把脉冲清 0，否则变成电平会被触发多次。' },
+          ],
+          steps: [
+            {
+              title: '维护余额',
+              text: 'credit 寄存器累加硬币面值，出货后清零。',
+            },
+            {
+              title: '判断出货与找零',
+              text: '≥15 出货，恰好 20 找零。',
+            },
+            {
+              title: '脉冲清零',
+              text: 'dispense/change 动作拍置 1，其余所有分支清 0。',
+            },
+          ],
         },
         {
           id: '2',
@@ -2509,6 +2817,38 @@ endmodule`,
     end
   end
 endmodule`,
+          explain: [
+            { line: 15, text: 'a 上升沿：本拍 a=1、上一拍 a_prev=0。' },
+            { line: 16, text: '上升沿时 b=0 为正转，加计数。' },
+            { line: 19, text: 'b=1 为反转，减计数。' },
+            { line: 24, text: '**每拍无条件**保存 a，才能在下一拍比较出边沿。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: '自动售货机里 credit（余额）应该用什么类型？',
+          options: ['reg（需要在时钟沿更新/保持）', 'wire', 'integer'],
+          answer: 0,
+          explain: '余额要在投币时累加、出货后清零并保持，必须是寄存器。',
+        },
+        {
+          q: 'dispense 这类「拉高一拍」的信号，最容易犯的错是？',
+          options: ['漏掉其余分支的清零，脉冲变成电平', '位宽不够', '用了阻塞赋值'],
+          answer: 0,
+          explain: '所有非动作分支都要清 0，否则下游会被触发多次。',
+        },
+        {
+          q: 'UART 回声电路中，rx 的 done 与 tx 的 start 如何连？',
+          options: ['直接相连，收完即发', '中间加计数器', '不连'],
+          answer: 0,
+          explain: 'done 是单拍脉冲，正好作为 start，无需额外状态机，是 IP 复用的典型。',
+        },
+        {
+          q: '正交编码器判断方向的依据是？',
+          options: ['A 相上升沿时 B 相的电平', '时钟频率', 'A 相的占空比'],
+          answer: 0,
+          explain: 'A 上升沿时 B=0 为正转、B=1 为反转，这是正交解码的基本原理。',
         },
       ],
     },

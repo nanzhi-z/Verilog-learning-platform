@@ -131,6 +131,80 @@ endmodule`,
   assign y = a & b;
 
 endmodule`,
+          explain: [
+            { line: 1, text: '声明一个名为 `and2` 的模块，括号里列出它对外的端口。' },
+            { line: 2, text: '输入端口 `a`，1 位宽。' },
+            { line: 3, text: '输入端口 `b`，1 位宽。' },
+            { line: 4, text: '输出端口 `y`，1 位宽。' },
+            { line: 5, text: '端口列表结束。' },
+            { line: 7, text: '**核心**：持续把 `y` 驱动为 `a` 和 `b` 的按位与；这一行就对应一个真实的与门。' },
+            { line: 9, text: '模块声明结束。' },
+          ],
+          truthTable: {
+            caption: '二输入与门',
+            head: ['a', 'b', 'y'],
+            rows: [
+              ['0', '0', '0'],
+              ['0', '1', '0'],
+              ['1', '0', '0'],
+              ['1', '1', '1'],
+            ],
+          },
+          alternatives: [
+            {
+              label: 'assign（推荐）',
+              note: '单门、表达式简单时用 `assign` 最简洁，是一行持续赋值。',
+              code: `module and2 (
+  input  a,
+  input  b,
+  output y
+);
+  assign y = a & b;
+endmodule`,
+            },
+            {
+              label: 'always @(*)',
+              note: '组合逻辑也可以用 `always @(*)`；此时输出要声明为 `reg`。功能与 assign 完全相同，多语句复杂逻辑时更方便。',
+              code: `module and2 (
+  input  a,
+  input  b,
+  output reg y
+);
+  always @(*) begin
+    y = a & b;
+  end
+endmodule`,
+            },
+          ],
+          circuit: {
+            nodes: [
+              { id: 'a', kind: 'in', x: 0, y: 0 },
+              { id: 'b', kind: 'in', x: 0, y: 1 },
+              { id: 'g1', kind: 'and', x: 1, y: 0, inputs: ['a', 'b'] },
+              { id: 'y', kind: 'out', x: 2, y: 0, inputs: ['g1'] },
+            ],
+            note: '两根输入线进入一个与门，输出 y 仅在 a、b 同时为 1 时为 1。',
+          },
+        },
+      ],
+      quiz: [
+        {
+          q: 'Verilog 中 `assign y = a & b;` 描述的是？',
+          options: ['一个先执行一次的赋值动作', '一个持续工作的与门电路', '一个时钟控制的寄存器'],
+          answer: 1,
+          explain: 'assign 是持续赋值，描述的是硬件电路（与门），不是执行一次的软件语句。',
+        },
+        {
+          q: '按位与、逻辑与分别用哪个运算符？',
+          options: ['& 与 &&', '&& 与 &', '| 与 &'],
+          answer: 0,
+          explain: '`&` 是按位与（门电路），`&&` 是逻辑与（结果为布尔真/假）。',
+        },
+        {
+          q: 'Verilog 里的 x、z 分别表示？',
+          options: ['未知 / 高阻', '0 / 1', '高电平 / 低电平'],
+          answer: 0,
+          explain: 'x 为未知（如未初始化），z 为高阻（无人驱动）。',
         },
       ],
     },
@@ -254,6 +328,30 @@ endmodule`,
   assign y = ~a;
 
 endmodule`,
+          explain: [
+            { line: 1, text: '声明模块 `not1`，端口在括号内。' },
+            { line: 2, text: '输入端口 `a`。' },
+            { line: 3, text: '输出端口 `y`。' },
+            { line: 4, text: '端口列表结束。' },
+            { line: 6, text: '持续把 `y` 驱动为 `a` 的取反，对应一个非门。' },
+            { line: 8, text: '模块结束。' },
+          ],
+          truthTable: {
+            caption: '非门',
+            head: ['a', 'y'],
+            rows: [
+              ['0', '1'],
+              ['1', '0'],
+            ],
+          },
+          circuit: {
+            nodes: [
+              { id: 'a', kind: 'in', x: 0, y: 0 },
+              { id: 'n1', kind: 'not', x: 1, y: 0, inputs: ['a'] },
+              { id: 'y', kind: 'out', x: 2, y: 0, inputs: ['n1'] },
+            ],
+            note: '输入经过一个非门（三角形 + 小圆圈），输出是输入的反相。',
+          },
         },
         {
           id: '2',
@@ -300,6 +398,40 @@ endmodule`,
   assign y = ~(a & b & c);
 
 endmodule`,
+          explain: [
+            { line: 1, text: '声明模块 `nand3`。' },
+            { line: 2, text: '输入端口 `a`。' },
+            { line: 3, text: '输入端口 `b`。' },
+            { line: 4, text: '输入端口 `c`。' },
+            { line: 5, text: '输出端口 `y`。' },
+            { line: 6, text: '端口列表结束。' },
+            { line: 7, text: '把 `a`、`b`、`c` 先与起来，再整体取反；对应一个三输入与非门，**只有全为 1 时 y 才为 0**。' },
+            { line: 9, text: '模块结束。' },
+          ],
+          truthTable: {
+            caption: '三输入与非门（仅全 1 时输出 0）',
+            head: ['a', 'b', 'c', 'y'],
+            rows: [
+              ['0', '0', '0', '1'],
+              ['0', '0', '1', '1'],
+              ['0', '1', '0', '1'],
+              ['0', '1', '1', '1'],
+              ['1', '0', '0', '1'],
+              ['1', '0', '1', '1'],
+              ['1', '1', '0', '1'],
+              ['1', '1', '1', '0'],
+            ],
+          },
+          circuit: {
+            nodes: [
+              { id: 'a', kind: 'in', x: 0, y: 0 },
+              { id: 'b', kind: 'in', x: 0, y: 1 },
+              { id: 'c', kind: 'in', x: 0, y: 2 },
+              { id: 'g1', kind: 'nand', x: 1, y: 1, inputs: ['a', 'b', 'c'] },
+              { id: 'y', kind: 'out', x: 2, y: 1, inputs: ['g1'] },
+            ],
+            note: '三根输入进入一个与非门（与门 + 输出小圆圈），输出被整体取反。',
+          },
         },
         {
           id: '3',
@@ -382,6 +514,61 @@ module or2 (
   not1 u4 (.a(w), .y(y));
 
 endmodule`,
+          explain: [
+            { line: 22, text: '声明 3 根内部连线：`na`、`nb` 是 a、b 的反相，`w` 是中间结果。' },
+            { line: 24, text: '非门 u1 把 a 取反，得到 `na = ~a`。' },
+            { line: 25, text: '非门 u2 把 b 取反，得到 `nb = ~b`。' },
+            { line: 26, text: '与门 u3 把两个反相信号与起来，得到 `w = ~a & ~b`。' },
+            { line: 27, text: '非门 u4 再取反，`y = ~(~a & ~b) = a | b`（德摩根定律）。' },
+          ],
+          truthTable: {
+            caption: '搭出的或门',
+            head: ['a', 'b', 'y'],
+            rows: [
+              ['0', '0', '0'],
+              ['0', '1', '1'],
+              ['1', '0', '1'],
+              ['1', '1', '1'],
+            ],
+          },
+          circuit: {
+            nodes: [
+              { id: 'a', kind: 'in', x: 0, y: 0 },
+              { id: 'b', kind: 'in', x: 0, y: 2 },
+              { id: 'u1', kind: 'not', x: 1, y: 0, inputs: ['a'] },
+              { id: 'u2', kind: 'not', x: 1, y: 2, inputs: ['b'] },
+              { id: 'u3', kind: 'and', x: 2, y: 1, inputs: ['u1', 'u2'] },
+              { id: 'u4', kind: 'not', x: 3, y: 1, inputs: ['u3'] },
+              { id: 'y', kind: 'out', x: 4, y: 1, inputs: ['u4'] },
+            ],
+            note: '两路先各自取反 → 与 → 再取反，用与门和非门搭出了或门（德摩根）。',
+          },
+        },
+      ],
+      quiz: [
+        {
+          q: 'ANSI 风格的端口列表，端口方向写在哪里？',
+          options: ['写在括号内的端口列表里', '在模块外单独声明', '写在 testbench 里'],
+          answer: 0,
+          explain: 'ANSI 风格把方向和类型写在 module 端口列表里，是推荐写法。',
+        },
+        {
+          q: '三输入与非门 y = ~(a & b & c)，什么时候输出 0？',
+          options: ['任一输入为 0', '三个输入全为 1', '三个输入全为 0'],
+          answer: 1,
+          explain: '与非门仅在所有输入都为 1 时，与结果为 1、取反后为 0。',
+        },
+        {
+          q: '德摩根定律中，a | b 等价于？',
+          options: ['~(~a & ~b)', '~a & ~b', 'a & b'],
+          answer: 0,
+          explain: 'a | b = ~(~a & ~b)，这正是练习 3 用积木搭或门的依据。',
+        },
+        {
+          q: '模块内部的连接线应该用什么声明？',
+          options: ['wire', 'input', 'reg'],
+          answer: 0,
+          explain: '内部连线用 wire 声明；input 是对外端口，reg 是过程变量。',
         },
       ],
     },
@@ -524,6 +711,60 @@ endmodule`,
   assign cout = g | (p & cin);
 
 endmodule`,
+          explain: [
+            { line: 9, text: '声明两根内部线：`p`（半加和/propagate）、`g`（直接进位/generate）。' },
+            { line: 11, text: '`p = a ^ b`：a、b 的异或，即不含进位的半加和。' },
+            { line: 12, text: '`g = a & b`：a、b 都为 1 时直接产生的进位。' },
+            { line: 13, text: '最终和 `s = p ^ cin`：半加和再与低位进位异或。' },
+            { line: 14, text: '`cout = g | (p & cin)`：进位要么直接产生（g），要么由 p 传递（p&cin）。' },
+            { line: 16, text: '模块结束。' },
+          ],
+          steps: [
+            {
+              title: '先算半加和与直接进位',
+              text: '声明 `wire p, g`，用两个 assign 算出 `p = a ^ b`、`g = a & b`。',
+              code: 'wire p, g;\nassign p = a ^ b;\nassign g = a & b;',
+            },
+            {
+              title: '再算最终和 s',
+              text: '把半加和 p 与低位进位 cin 再异或，得到 `s = p ^ cin`。',
+              code: 'assign s = p ^ cin;',
+            },
+            {
+              title: '最后算进位 cout',
+              text: '两个来源取或：a、b 直接产生 g，或 p 把 cin 传递上来：`cout = g | (p & cin)`。',
+              code: 'assign cout = g | (p & cin);',
+            },
+          ],
+          truthTable: {
+            caption: '全加器（cout 为进位、s 为本位和）',
+            head: ['a', 'b', 'cin', 'cout', 's'],
+            rows: [
+              ['0', '0', '0', '0', '0'],
+              ['0', '0', '1', '0', '1'],
+              ['0', '1', '0', '0', '1'],
+              ['0', '1', '1', '1', '0'],
+              ['1', '0', '0', '0', '1'],
+              ['1', '0', '1', '1', '0'],
+              ['1', '1', '0', '1', '0'],
+              ['1', '1', '1', '1', '1'],
+            ],
+          },
+          circuit: {
+            nodes: [
+              { id: 'a', kind: 'in', x: 0, y: 0 },
+              { id: 'b', kind: 'in', x: 0, y: 1 },
+              { id: 'cin', kind: 'in', x: 0, y: 4 },
+              { id: 'x1', kind: 'xor', x: 1, y: 0, inputs: ['a', 'b'] },
+              { id: 'a1', kind: 'and', x: 1, y: 2, inputs: ['a', 'b'] },
+              { id: 'x2', kind: 'xor', x: 2, y: 0, inputs: ['x1', 'cin'] },
+              { id: 's', kind: 'out', x: 3, y: 0, inputs: ['x2'] },
+              { id: 'a2', kind: 'and', x: 2, y: 3, inputs: ['x1', 'cin'] },
+              { id: 'o1', kind: 'or', x: 3, y: 3, inputs: ['a1', 'a2'] },
+              { id: 'cout', kind: 'out', x: 4, y: 3, inputs: ['o1'] },
+            ],
+            note: '全加器 = 两级异或求 s，两个与门 + 一个或门求进位 cout。',
+          },
         },
         {
           id: '2',
@@ -582,6 +823,15 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 2, text: '`y` 声明为 `output reg`，因为它在 initial 过程块里被赋值。' },
+            { line: 5, text: 'initial 块在仿真开始时执行一次。' },
+            { line: 6, text: 't=0 时先把 y 置为 0。' },
+            { line: 7, text: '`#10` 等待 10 个时间单位，t=10 时 y 变 1。' },
+            { line: 8, text: '`#20` 累计到 t=30，y 变 0。' },
+            { line: 9, text: '`#15` 累计到 t=45，y 变 1。' },
+            { line: 10, text: '`#25` 累计到 t=70，y 变 0。注意 `#` 是相对上一条的累计延迟。' },
+          ],
         },
         {
           id: '3',
@@ -629,6 +879,37 @@ endmodule`,
   assign y = en ? a : 1'bz;
 
 endmodule`,
+          explain: [
+            { line: 2, text: '使能端 `en`。' },
+            { line: 3, text: '数据输入 `a`。' },
+            { line: 7, text: '**三态门**：en=1 时 y 跟随 a；en=0 时输出高阻 `z`，把总线让给别的驱动者。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: '全加器中，进位 cout 在什么情况下为 1？',
+          options: ['a、b 都为 1，或半加和 p 与 cin 都为 1', '只要 a 为 1', '只有 cin 为 1'],
+          answer: 0,
+          explain: 'cout = g | (p & cin)，即 a、b 直接产生进位，或 p 把 cin 传递上来。',
+        },
+        {
+          q: '在 initial 块里，连续两条 `#10 a=1; #20 a=0;`，a 变 0 的时刻是？',
+          options: ['t=20', 't=30', 't=10'],
+          answer: 1,
+          explain: '# 是相对上一条的累计延迟，10+20=30。',
+        },
+        {
+          q: '三态缓冲器 en=0 时输出什么？',
+          options: ['高阻 z', '0', '保持 a 的值'],
+          answer: 0,
+          explain: 'en=0 时输出 z（高阻），把总线让出，这是总线复用的基础。',
+        },
+        {
+          q: '为什么把复杂电路拆成多个 wire 命名中间结果？',
+          options: ['电路结构更清晰、便于推理与复用', '能让仿真更快', '语法上必须这样写'],
+          answer: 0,
+          explain: '命名中间结果（如 p、g）让电路结构一目了然，避免一个难以理解的大表达式。',
         },
       ],
     },
@@ -762,6 +1043,11 @@ endmodule`,
   assign y = {hi, lo};
 
 endmodule`,
+          explain: [
+            { line: 2, text: '`hi` 是 4 位输入（将放在高半字节）。' },
+            { line: 3, text: '`lo` 是 4 位输入（将放在低半字节）。' },
+            { line: 7, text: '拼接运算符 `{hi, lo}` 把 hi 放在高 4 位、lo 放在低 4 位，合成 8 位；如 hi=A、lo=5 得 `A5`。' },
+          ],
         },
         {
           id: '2',
@@ -804,6 +1090,10 @@ endmodule`,
   assign y = {a[3:0], a[7:4]};
 
 endmodule`,
+          explain: [
+            { line: 2, text: '8 位输入 `a`。' },
+            { line: 6, text: '部分选择取低半字节 `a[3:0]` 放高位、高半字节 `a[7:4]` 放低位，交换高低半字节；如 AB → BA。' },
+          ],
         },
         {
           id: '3',
@@ -861,6 +1151,38 @@ endmodule`,
   assign y = a & b;
 
 endmodule`,
+          explain: [
+            { line: 1, text: '`#(...)` 声明参数列表。' },
+            { line: 2, text: '参数 `W` 默认 4，实例化时可用 `#(.W(8))` 覆盖。' },
+            { line: 4, text: '端口位宽 `[W-1:0]` 随参数变化，一套代码适配任意位宽。' },
+            { line: 9, text: '按位与 `&` 对向量逐位进行，一行即可处理所有位。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: '拼接 {hi, lo} 中，哪个在高位？',
+          options: ['hi（左边）', 'lo（右边）', '随机'],
+          answer: 0,
+          explain: '拼接结果中，左边的表达式占据高位，如 {4\'hA,4\'h5}=8\'hA5。',
+        },
+        {
+          q: 'Verilog 向量默认（本教程）的编号方向是？',
+          options: ['[N-1:0]，左边是最高位', '[0:N-1]，右边是最高位', '没有编号'],
+          answer: 0,
+          explain: '本教程统一 [N-1:0]，data[0] 是最低位、data[N-1] 是最高位。',
+        },
+        {
+          q: '参数化模块的主要好处是？',
+          options: ['一套代码通过参数适配不同位宽/规模', '让代码更短', '语法更简单'],
+          answer: 0,
+          explain: 'parameter 让模块可复用，如一个参数化与门可同时用于 4 位和 8 位。',
+        },
+        {
+          q: '8\'hA5 中，高半字节和低半字节分别是？',
+          options: ['A 和 5', '5 和 A', 'A5 和 0'],
+          answer: 0,
+          explain: '十六进制每位对应 4 位，A 在高 4 位、5 在低 4 位。',
         },
       ],
     },
@@ -982,6 +1304,13 @@ endmodule`,
   assign {cout, s} = {1'b0, a} + {1'b0, b};
 
 endmodule`,
+          explain: [
+            { line: 2, text: '8 位输入 `a`。' },
+            { line: 3, text: '8 位输入 `b`。' },
+            { line: 4, text: '8 位和 `s`。' },
+            { line: 5, text: '进位 `cout`。' },
+            { line: 8, text: '**关键**：用 `{1\'b0, a}` 把操作数拓宽到 9 位再相加，结果 9 位；左边 `{cout, s}` 正好接住，最高位是进位。若不拓宽，加法按 8 位截断、进位丢失。' },
+          ],
         },
         {
           id: '2',
@@ -1035,6 +1364,10 @@ endmodule`,
   assign y = a >> amt;
 
 endmodule`,
+          explain: [
+            { line: 3, text: '移位量 `amt`（0–3），可以是变量。' },
+            { line: 7, text: '右移 amt 位：高位补 0、移出位丢弃。如 F=1111 右移 1 位得 0111。' },
+          ],
         },
         {
           id: '3',
@@ -1085,6 +1418,36 @@ endmodule`,
   assign p = ^d;
 
 endmodule`,
+          explain: [
+            { line: 2, text: '8 位数据 `d`。' },
+            { line: 6, text: '**缩位异或** `^d` 把 8 位折叠成 1 位：d 中 1 的个数为奇数时 p=1，偶数时 p=0。如 A5=10100101 有 4 个 1，p=0。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: '8 位加法器为什么要先把操作数拓宽到 9 位？',
+          options: ['否则进位会被按 8 位截断而丢失', '语法强制要求', '能让和变大'],
+          answer: 0,
+          explain: '8 位相加最多 255+255=510，需要 9 位才能装下进位；{1\'b0,a} 显式拓宽。',
+        },
+        {
+          q: '^d（缩位异或）的结果位宽是？',
+          options: ['1 位', '与 d 相同', '8 位'],
+          answer: 0,
+          explain: '缩位运算把整个向量折叠成 1 位，常用于奇偶校验。',
+        },
+        {
+          q: '4\'b1111 >> 2 的结果是？',
+          options: ['0011', '1100', '0111'],
+          answer: 0,
+          explain: '右移 2 位，高位补 0、低 2 位丢弃：1111 → 0011。',
+        },
+        {
+          q: '按位与 & 和逻辑与 && 的区别是？',
+          options: ['& 逐位运算得向量，&& 整体看待得 1 位布尔', '两者完全相同', '&& 逐位，& 整体'],
+          answer: 0,
+          explain: '如 4\'b1010 & 4\'b1100 = 1000；而 4\'b1010 && 4\'b1100 = 1（非零即真）。',
         },
       ],
     },
@@ -1197,6 +1560,47 @@ endmodule`,
   assign y = s ? b : a;
 
 endmodule`,
+          explain: [
+            { line: 2, text: '选择信号 `s`。' },
+            { line: 3, text: '数据输入 `a`（s=0 时被选中）。' },
+            { line: 4, text: '数据输入 `b`（s=1 时被选中）。' },
+            { line: 8, text: '**条件运算符**：s=1 选 b，s=0 选 a；这就是一个二选一多路选择器。' },
+          ],
+          steps: [
+            {
+              title: '确定选择逻辑',
+              text: 's 为 1 时输出 b，为 0 时输出 a，正好对应三目运算符 `s ? b : a`。',
+            },
+            {
+              title: '用 assign 驱动输出',
+              text: '写 `assign y = s ? b : a;`，综合后得到一个 2:1 MUX。',
+              code: 'assign y = s ? b : a;',
+            },
+          ],
+          truthTable: {
+            caption: '2:1 多路选择器',
+            head: ['s', 'a', 'b', 'y'],
+            rows: [
+              ['0', '0', '0', '0'],
+              ['0', '1', '0', '1'],
+              ['0', '0', '1', '0'],
+              ['0', '1', '1', '1'],
+              ['1', '0', '0', '0'],
+              ['1', '1', '0', '0'],
+              ['1', '0', '1', '1'],
+              ['1', '1', '1', '1'],
+            ],
+          },
+          circuit: {
+            nodes: [
+              { id: 'a', kind: 'in', x: 0, y: 0 },
+              { id: 'b', kind: 'in', x: 0, y: 2 },
+              { id: 's', kind: 'in', x: 0, y: 4 },
+              { id: 'm', kind: 'mux', x: 1, y: 1, inputs: ['a', 'b', 's'] },
+              { id: 'y', kind: 'out', x: 2, y: 1, inputs: ['m'] },
+            ],
+            note: 'MUX 有两个数据输入（a、b）和一个选择端 s，s 决定把哪一路接到输出。',
+          },
         },
         {
           id: '2',
@@ -1258,6 +1662,10 @@ endmodule`,
   assign y = s[1] ? (s[0] ? d : c) : (s[0] ? b : a);
 
 endmodule`,
+          explain: [
+            { line: 2, text: '2 位选择信号 `s`。' },
+            { line: 10, text: '**嵌套条件**：s[1] 先决定前两路（a,b）还是后两路（c,d），s[0] 再细分；s=0选a、1选b、2选c、3选d。' },
+          ],
         },
         {
           id: '3',
@@ -1330,6 +1738,39 @@ endmodule`,
             :         2'd0;
 
 endmodule`,
+          explain: [
+            { line: 2, text: '请求向量 `req`。' },
+            { line: 3, text: '输出请求编号 `idx`。' },
+            { line: 4, text: '有效标志 `valid`。' },
+            { line: 7, text: '`valid = |req` 缩位或：有任何请求时为 1。' },
+            { line: 8, text: '**条件链从最高位 req[3] 开始**：多个请求同时到来时，只指向优先级最高的那一位。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: '2:1 MUX 的条件表达式 `s ? b : a`，s=0 时输出？',
+          options: ['a', 'b', '0'],
+          answer: 0,
+          explain: '三目运算符冒号前是条件为真，s=0 为假，取 a。',
+        },
+        {
+          q: '4:1 MUX 用 2 位选择信号，最多可选几路？',
+          options: ['4 路', '2 路', '8 路'],
+          answer: 0,
+          explain: 'n 位选择信号可寻址 2^n 路，2 位 = 4 路。',
+        },
+        {
+          q: '优先编码器 req=4\'b0110 时，idx 指向？',
+          options: ['2（req[2]）', '1（req[1]）', '3'],
+          answer: 0,
+          explain: 'req[2]、req[1] 同时为 1，最高位 req[2] 优先，idx=2。',
+        },
+        {
+          q: '组合逻辑电路的输出取决于？',
+          options: ['仅当前输入', '历史状态', '时钟'],
+          answer: 0,
+          explain: '组合逻辑没有记忆，输出只由当前输入决定，assign 描述的就是组合逻辑。',
         },
       ],
     },
@@ -1454,6 +1895,11 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 4, text: '输出声明为 `reg`，因为它在 always 块里被赋值（reg 不代表一定是寄存器）。' },
+            { line: 7, text: '`always @(*)`：组合逻辑块，输入一变化块就重新执行。' },
+            { line: 8, text: '**阻塞赋值** `=` 立即生效，综合后就是与门，和 assign 版电路完全相同。' },
+          ],
         },
         {
           id: '2',
@@ -1506,6 +1952,10 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 9, text: 's 为真时选 b。' },
+            { line: 10, text: 'else 分支选 a；**两条分支都必须给 y 赋值**，否则未覆盖的情况会保持原值、综合出锁存器。' },
+          ],
         },
         {
           id: '3',
@@ -1567,6 +2017,37 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 8, text: '`case (sel)` 按 sel 的值多路分支。' },
+            { line: 9, text: 'sel=0 时输出 d[0]，其余分支类似。' },
+            { line: 16, text: '`default` 兜底未列出的情况，避免遗漏产生锁存器。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: '组合逻辑 always 块的敏感列表应该写？',
+          options: ['@(*)', '@(a)', '@(posedge clk)'],
+          answer: 0,
+          explain: '@(*) 自动包含右边用到的所有信号，组合逻辑永远用它，避免漏写导致不刷新。',
+        },
+        {
+          q: '在 always 块里被赋值的信号必须声明为？',
+          options: ['reg', 'wire', 'input'],
+          answer: 0,
+          explain: 'reg 只表示被过程赋值驱动；@(*) + 阻塞赋值仍综合为组合逻辑。',
+        },
+        {
+          q: '组合 always 块里应该用哪种赋值？',
+          options: ['阻塞赋值 =', '非阻塞赋值 <=', 'continuous assign'],
+          answer: 0,
+          explain: '组合逻辑用 =，语句立即生效；非阻塞 <= 留给时序逻辑。',
+        },
+        {
+          q: 'if 语句没有 else、且未给输出赋默认值，会综合出什么？',
+          options: ['锁存器', '与门', '纯组合逻辑'],
+          answer: 0,
+          explain: '输出在某些输入组合下保持原值，综合器会插入锁存器，这通常是 bug。',
         },
       ],
     },
@@ -1698,6 +2179,11 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 7, text: 'if / else if 链天然体现优先级：先判 req[3]，最高。' },
+            { line: 10, text: '依次向下，多请求同时到来时只授权最高优先级位。' },
+            { line: 11, text: '**最后的 else 必须有**：无请求时 grant=0；缺了它输出在某些组合下保持原值，综合出锁存器。' },
+          ],
         },
         {
           id: '2',
@@ -1768,6 +2254,10 @@ endmodule`,
   end
 
 endmodule`,
+          explain: [
+            { line: 10, text: 'op=00 与、01 或、02 异或。' },
+            { line: 13, text: '**default 必须有**：op=11 时 y=~a；否则该组合下 y 未赋值，综合出锁存器。' },
+          ],
         },
         {
           id: '3',
@@ -1818,6 +2308,36 @@ endmodule`,
   assign g = b ^ (b >> 1);
 
 endmodule`,
+          explain: [
+            { line: 2, text: '4 位二进制输入 `b`。' },
+            { line: 6, text: '`g = b ^ (b>>1)`：每一位与它前一位异或；得到的格雷码相邻两个数仅一位不同，如 2(0010)→3(0011)。' },
+          ],
+        },
+      ],
+      quiz: [
+        {
+          q: '综合出锁存器的根本原因是？',
+          options: ['某些输入组合下输出未被赋值、需保持原值', '用了 always 块', '用了 reg'],
+          answer: 0,
+          explain: '组合逻辑必须在所有输入组合下都给输出赋值；有遗漏就会产生保持原值的锁存器。',
+        },
+        {
+          q: '避免锁存器的常用做法不包括？',
+          options: ['去掉所有 reg 声明', 'if 配 else、case 配 default', '块开头给输出赋默认值'],
+          answer: 0,
+          explain: 'reg 是过程赋值必需的，不能去掉；补全分支或先赋默认值才是防锁存器的方法。',
+        },
+        {
+          q: 'case 里 default 分支的作用是？',
+          options: ['覆盖未列出的输入组合，避免锁存器', '让仿真更快', '语法装饰'],
+          answer: 0,
+          explain: 'default 兜底所有未列举情况，保证输出在任何组合下都被赋值。',
+        },
+        {
+          q: '格雷码最重要的特性是？',
+          options: ['相邻数值仅一位不同', '数值更小', '全是 0 和 1'],
+          answer: 0,
+          explain: '相邻数仅一位翻转，可消除多位同时变化的毛刺，广泛用于旋转编码器和异步 FIFO 指针。',
         },
       ],
     },

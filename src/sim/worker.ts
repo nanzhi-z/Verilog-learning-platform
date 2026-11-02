@@ -5,7 +5,6 @@
  */
 import { simulate, type SimOptions, type SimResult } from './index';
 
-
 export interface SimRequest {
   id: number;
   sources: string[];
