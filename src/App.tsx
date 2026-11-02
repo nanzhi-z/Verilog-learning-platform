@@ -4,7 +4,7 @@ import Header from './components/Header';
 
 // 路由级代码分割：练习页（含 CodeMirror）与仿真器按需加载，不进入首屏
 const Home = lazy(() => import('./pages/Home'));
-const ReadPage = lazy(() => import('./readPage'));
+const ReadPage = lazy(() => import('./pages/ReadPage'));
 const ExercisePage = lazy(() => import('./pages/ExercisePage'));
 const Notebook = lazy(() => import('./pages/Notebook'));
 const Cheatsheet = lazy(() => import('./pages/Cheatsheet'));
