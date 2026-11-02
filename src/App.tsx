@@ -41,19 +41,19 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route
             path="/read/:cid"
-            element={{
+            element={
               <ReKey>
                 <ReadPage />
               </ReKey>
-            }}
+            }
           />
           <Route
             path="/ex/:cid/:eid"
-            element={{
+            element={
               <ReKey>
                 <ExercisePage />
               </ReKey>
-            }}
+            }
           />
           <Route path="/notebook" element={<Notebook />} />
           <Route path="/cheatsheet" element={<Cheatsheet />} />
