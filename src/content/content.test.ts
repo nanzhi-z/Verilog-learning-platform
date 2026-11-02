@@ -5,8 +5,8 @@ import { chapters } from './index';
 const SIM_OPTS = { maxTime: 500000, budget: 200_000_000 } as const;
 
 describe('course content integrity', () => {
-  it('has 23 chapters', () => {
-    expect(chapters.length).toBe(23);
+  it('has 28 chapters', () => {
+    expect(chapters.length).toBe(28);
   });
 
   it('every solution passes its testbench', () => {
